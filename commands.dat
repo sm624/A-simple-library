@@ -1,0 +1,29 @@
+PRINT BOOKS
+PRINT PEOPLE
+CHECKOUT War and Peace:Dora Lindsay
+REPORT Dora Lindsay
+STATS War and Peace
+RETURN War and Peace
+CHECKOUT Kidnapped:Dora Lindsay
+CHECKOUT Kidnapped:Alden Marquez
+REPORT Dora Lindsay
+REPORT Alden Marquez
+STATS Kidnapped
+RETURN Kidnapped
+REPORT Dora Lindsay
+REPORT Alden Marquez
+STATS Kidnapped
+CHECKOUT Watership Down:Dora Lindsay
+CHECKOUT Kidnapped:Alden Marquez
+CHECKOUT War and Peace:Ignacia Pace
+STATS Kidnapped
+STATS War and Peace
+STATS Watership Down
+RETURN Watership Down
+RETURN Kidnapped
+RETURN War and Peace
+REPORT Dora Lindsay
+REPORT Alden Marquez
+REPORT Ignacia Pace
+PRINT BOOKS
+PRINT PEOPLE
