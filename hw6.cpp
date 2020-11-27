@@ -11,7 +11,7 @@ using namespace std;
 const int MAX_READERS = 50;
 const int MAX_BOOKS = 1000;
 
-enum CommandT{PRINT = 1, CHECKOUT, REPORT, STATS, RETURN};
+enum CommandT{PRINT = 1, CHECKOUT, REPORT, STATS, RETURN, UNKNOWN};
 
 struct ReaderT{ //represents a reader
     string name;
@@ -124,8 +124,8 @@ void ReadLibrary(ifstream & booksFile, BookT books[], size_t & booksSize){
         books[booksSize].author = author;
         books[booksSize].pages = pages;
         booksSize++;
-        if(booksSize > MAX_BOOKS){
-            cout << "Error: Too many books." << endl;
+        if(booksSize >= MAX_BOOKS){
+            cout << "Error: Can not add title to the library. It is full." << endl;
             return;
         }
         getline(booksFile, temp);
@@ -136,15 +136,18 @@ void ReadLibrary(ifstream & booksFile, BookT books[], size_t & booksSize){
 //reads from readers file and stores in readers array
 void ReadPeople(ifstream & readersFile, ReaderT readers[], size_t & readersSize){
     string temp;
+    int beyondSize = 0;
     getline(readersFile, temp);
     while(readersFile){
-        readers[readersSize].name = temp;
-        readersSize++;
-        if(readersSize > MAX_READERS){
-            cout << "Error: Too many readers." << endl;
-            return;
+        if(readersSize >= MAX_READERS){
+            beyondSize++;
+            cout << "Error: reader list is full.  Unable to add name " << readersSize + beyondSize << "." << endl;
         }
-        getline(readersFile, temp);
+        else{
+            readers[readersSize].name = temp;
+            readersSize++;
+            getline(readersFile, temp);
+        }
     }
 
     return;
@@ -158,7 +161,13 @@ void ProcessCommands(ifstream & commandsFile, ReaderT readers[], BookT books[], 
     while(commandsFile){
         command = SplitCommand(line);
         newCom = CommandToCommandT(command);
-        cout << "Executing " << command << " " << line << "." << endl;
+        cout << "Executing " << command; 
+        if (line != command){
+            cout << " " << line << "." << endl;
+        }
+        else{
+            cout << "." << endl;
+        }
         switch(newCom){
             case PRINT: 
                 DoPrint(line, books, readers, readersSize, booksSize);
@@ -174,6 +183,9 @@ void ProcessCommands(ifstream & commandsFile, ReaderT readers[], BookT books[], 
                 break;
             case RETURN: 
                 DoReturn(line, books, readers, booksSize);
+                break;
+            case UNKNOWN:
+                cout << "Error: unknown action " << command << "." << endl;
                 break;
         }
         cout << endl;
@@ -200,6 +212,9 @@ CommandT CommandToCommandT(string command){
     }
     else if(command == "RETURN"){
         newCom = RETURN;
+    }
+    else{
+        newCom = UNKNOWN;
     }
 
     return newCom;
@@ -250,7 +265,7 @@ void SplitBook(string line, string &book, string &author, int &pages){
 void DoReturn(string book, BookT books[], ReaderT readers[], size_t booksSize){
     size_t bookPos = FindBook(book, books, booksSize);
     size_t readerPos = 0;
-    if(bookPos == 2000){
+    if(bookPos == MAX_BOOKS){
         cout << "Error: Book does not exist." << endl;
     }
     else{
@@ -274,21 +289,21 @@ void DoReturn(string book, BookT books[], ReaderT readers[], size_t booksSize){
 //High level function for checkout command, calls lower level functions and checks out book if no errors occur
 void DoCheckout(string line, BookT books[], ReaderT readers[], size_t booksSize, size_t readersSize){
     string title, name;
-    size_t bookPos = 2000, readerPos = 100;
+    size_t bookPos = MAX_BOOKS, readerPos = MAX_READERS;
     SeptCheckout(line, title, name);
     readerPos = FindReader(name, readers, readersSize);
-    if(readerPos != 100){ //IF READER EXISTS
+    if(readerPos != MAX_READERS){ //IF READER EXISTS
         bookPos = FindBook(title, books, booksSize);
     }
     else{ //IF READER DOES NOT EXIST
         cout << "Error: Reader not found." << endl;
     }
-    if(bookPos != 2000 && readerPos != 100){ //IF BOOK EXISTS AND READER EXISTS
+    if(bookPos != MAX_BOOKS && readerPos != MAX_READERS){ //IF BOOK EXISTS AND READER EXISTS
         if(readers[readerPos].hasBook == true){
             cout << "Error: Reader already has a book." << endl;
         }
         else if(books[bookPos].present == false){
-            cout << "Error: Book is already checkout out." << endl;
+            cout << "Error: " << books[bookPos].name << " is already checked out." << endl;
         }
         else{
             cout << "Loaning " << title << " to " << name << "." << endl;
@@ -299,7 +314,7 @@ void DoCheckout(string line, BookT books[], ReaderT readers[], size_t booksSize,
             books[bookPos].present = false;
         }
     }
-    else if(bookPos == 2000){ //IF BOOK DOES NOT EXISTS 
+    else if(bookPos == MAX_BOOKS){ //IF BOOK DOES NOT EXISTS 
         cout << "Error: Book not found." << endl;
     }
 
@@ -326,7 +341,7 @@ void DoReport(string line, ReaderT readers[], BookT books[], size_t readersSize)
     size_t pos = FindReader(line, readers, readersSize);
     size_t bookPos;
 
-    if (pos != 100){
+    if (pos != MAX_READERS){
         PrintPerson(readers, pos);
         if(readers[pos].hasBook){
             bookPos = readers[pos].book;
@@ -343,7 +358,7 @@ void DoReport(string line, ReaderT readers[], BookT books[], size_t readersSize)
 void DoStats(string line, ReaderT readers[], BookT books[], size_t booksSize){
     size_t pos = FindBook(line, books, booksSize);
     size_t readerPos;
-    if(pos != 2000){
+    if(pos != MAX_BOOKS){
         PrintBook(books, pos);
         if(!books[pos].present){
             readerPos = books[pos].borrower;
@@ -370,9 +385,9 @@ void SeptCheckout(string line, string &title, string &name){
 
     return;
 }
-//finds reader in array and returns readers position in array, if it does not find reader returns 100
+//finds reader in array and returns readers position in array, if it does not find reader returns MAX_READERS
 size_t FindReader(string name, ReaderT readers[], size_t readersSize){
-    size_t i, pos = 100;
+    size_t i, pos = MAX_READERS;
     
     for(i=0; i<readersSize; i++){
         if(name == readers[i].name){
@@ -383,9 +398,9 @@ size_t FindReader(string name, ReaderT readers[], size_t readersSize){
 
     return pos;
 }
-//finds book in array and returns position of book in array if it is in book, if not returns 2000
+//finds book in array and returns position of book in array if it is in book, if not returns MAX_BOOKS
 size_t FindBook(string name, BookT books[], size_t booksSize){
-    size_t i, pos = 2000;
+    size_t i, pos = MAX_BOOKS;
 
     for(i=0; i<booksSize; i++){
         if(name == books[i].name){
@@ -411,19 +426,27 @@ void PrintPeople(ReaderT readers[], size_t readersSize){
     size_t i;
 
     for(i=0; i<readersSize; i++){
-        cout << readers[i].name << endl << "\tBooks read: " << readers[i].booksRead << "." << endl << "\tPages read: " << readers[i].pagesRead << "." << endl;
+        cout << readers[i].name << endl; 
+        cout << "\tBooks read: " << readers[i].booksRead << "." << endl; 
+        cout << "\tPages read: " << readers[i].pagesRead << "." << endl;
     }
 
     return;
 }
 //prints a specific book in array, at position pos
 void PrintBook(BookT books[], size_t pos){
-    cout << books[pos].name << endl << "\tby " << books[pos].author << "." << endl << "\tPages: " << books[pos].pages << "." << endl << "\tTotal Reads: " << books[pos].timesRead << "." << endl;
+    cout << books[pos].name << endl; 
+    cout << "\tby " << books[pos].author << "." << endl; 
+    cout << "\tPages: " << books[pos].pages << "." << endl; 
+    cout << "\tTotal Reads: " << books[pos].timesRead << "." << endl;
 
     return;
 }
 //prints a specific reader in array, at position pos
 void PrintPerson(ReaderT readers[], size_t pos){
-    cout << readers[pos].name << endl << "\tBooks read: " << readers[pos].booksRead << "." << endl << "\tPages read: " << readers[pos].pagesRead << "." << endl;
+    cout << readers[pos].name << endl; 
+    cout << "\tBooks read: " << readers[pos].booksRead << "." << endl; 
+    cout << "\tPages read: " << readers[pos].pagesRead << "." << endl;
+    
     return;
 }
