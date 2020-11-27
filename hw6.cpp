@@ -1,5 +1,3 @@
-//Shaun McCormick
-//CSCI230
 //This program is a simple library that takes four files, a commands file, books file, readers file, and a master file. This program also executes simple commands.
 
 #include <iostream>
